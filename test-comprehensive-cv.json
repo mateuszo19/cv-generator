@@ -1,0 +1,366 @@
+{
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "birthDate": "1990-05-15",
+  "photo": null,
+  "address": "ul. Przykładowa 123/45",
+  "city": "Warszawa",
+  "postalCode": "00-001",
+  "phone": "+48 123 456 789",
+  "email": "jan.kowalski@email.com",
+  "summary": "Senior Full Stack Developer z ponad 8-letnim doświadczeniem w projektowaniu i wdrażaniu skalowalnych aplikacji webowych. Ekspert w technologiach JavaScript, TypeScript, React i Node.js. Pasjonat automatyzacji, CI/CD i chmury obliczeniowej. Aktywny członek społeczności open-source, prelegent na konferencjach technicznych.",
+  "additionalInfo": [
+    {
+      "label": "LinkedIn",
+      "content": "linkedin.com/in/jankowalski"
+    },
+    {
+      "label": "GitHub",
+      "content": "github.com/jankowalski"
+    },
+    {
+      "label": "Portfolio",
+      "content": "jankowalski.dev"
+    },
+    {
+      "label": "Blog",
+      "content": "blog.jankowalski.dev"
+    }
+  ],
+  "experience": [
+    {
+      "company": "Tech Solutions Sp. z o.o.",
+      "position": "Senior Full Stack Developer",
+      "startDate": "2020-03",
+      "endDate": "2024-12",
+      "jobDescription": "Kierowanie zespołem 5-osobowym w rozwoju platformy e-commerce obsługijącej 1M+ użytkowników miesięcznie. Projektowanie architektury microservices, optymalizacja wydajności i wdrażanie rozwiązań chmurowych.",
+      "description": [
+        "Opracowanie nowej architektury mikroserwisów redukującej czas odpowiedzi API o 60%",
+        "Wdrożenie CI/CD pipeline z GitHub Actions, skracający czas deploymentu z 2 dni do 2 godzin",
+        "Mentoring 5 junior developerów, przeprowadzenie 50+ code reviews miesięcznie",
+        "Optymalizacja bazy danych PostgreSQL, zmniejszająca koszty infrastruktury o 40%",
+        "Wprowadzenie testów automatycznych pokrywających 90% kodu",
+        "Implementacja systemu cachowania Redis zwiększającego wydajność o 300%"
+      ]
+    },
+    {
+      "company": "Digital Innovations Ltd",
+      "position": "Mid Full Stack Developer",
+      "startDate": "2017-06",
+      "endDate": "2020-02",
+      "jobDescription": "Rozwój aplikacji SaaS dla klientów korporacyjnych. Praca nad frontendem (React) oraz backendem (Node.js/Express). Uczestnictwo w procesie agile/scrum.",
+      "description": [
+        "Stworzenie dashboardu analitycznego przetwarzającego 100K+ rekordów w czasie rzeczywistym",
+        "Implementacja systemu autoryzacji OAuth2 i JWT",
+        "Opracowanie biblioteki komponentów UI używanej w 10+ projektach",
+        "Współpraca z teamem product ownerów w definiowaniu wymagań funkcjonalnych",
+        "Refaktoryzacja legacy code, poprawiająca maintainability o 50%"
+      ]
+    },
+    {
+      "company": "Web Studio Pro",
+      "position": "Junior Frontend Developer",
+      "startDate": "2015-09",
+      "endDate": "2017-05",
+      "jobDescription": "Projektowanie i implementacja responsywnych stron internetowych oraz aplikacji webowych dla klientów z branży e-commerce i mediowej.",
+      "description": [
+        "Rozwój 15+ stron internetowych opartych na WordPress i React",
+        "Optymalizacja SEO i Core Web Vitals, zwiększająca ruch organiczny o 80%",
+        "Współpraca z designerami przy implementacji pixel-perfect UI",
+        "Implementacja animacji CSS/JavaScript i interaktywnych komponentów"
+      ]
+    }
+  ],
+  "customSections": [
+    {
+      "id": "projekty-it-1",
+      "title": "Projekty IT",
+      "type": "it-projects",
+      "items": [
+        {
+          "id": "projekt-1",
+          "data": {
+            "name": "E-commerce Platform",
+            "technologies": ["React", "TypeScript", "Node.js", "PostgreSQL", "Redis", "Docker", "AWS", "GraphQL"],
+            "description": "Pełnowymiarowa platforma e-commerce z systemem płatności, zarządzaniem zamówieniami i integracją z kurierami. Obsługa 10K+ transakcji dziennie."
+          }
+        },
+        {
+          "id": "projekt-2",
+          "data": {
+            "name": "Task Management System",
+            "technologies": ["Vue.js", "Firebase", "Vuetify", "PWA"],
+            "description": "Aplikacja do zarządzania zadaniami i projektami z funkcjami drag-and-drop, powiadomieniami push i synchronizacją offline. 5K+ aktywnych użytkowników."
+          }
+        },
+        {
+          "id": "projekt-3",
+          "data": {
+            "name": "Real-time Analytics Dashboard",
+            "technologies": ["React", "D3.js", "WebSocket", "Node.js", "MongoDB", "Kafka"],
+            "description": "Dashboard analityczny z wizualizacją danych w czasie rzeczywistym dla systemu monitoringu infrastruktury. Przetwarzanie 1M+ events/h."
+          }
+        },
+        {
+          "id": "projekt-4",
+          "data": {
+            "name": "Open Source Contribution",
+            "technologies": ["TypeScript", "React", "Open Source"],
+            "description": "Aktywny contributor do popularnych bibliotek: react-select (10K+ downloads), formik (5M+ downloads), node-postgres. Maintainer 3 własnych pakietów npm z łącznie 50K+ downloads."
+          }
+        }
+      ]
+    },
+    {
+      "id": "wyksztalcenie-1",
+      "title": "Wykształcenie",
+      "type": "education",
+      "items": [
+        {
+          "id": "edu-1",
+          "data": {
+            "school": "Politechnika Warszawska",
+            "field": "Informatyka, Inżynieria Oprogramowania",
+            "degree": "Magister Inżynier",
+            "startDate": "2014-10",
+            "endDate": "2016-02",
+            "description": "Specjalizacja: Systemy rozproszone i chmura obliczeniowa. Praca magisterska: \"Optymalizacja baz NoSQL w środowisku rozproszonym\". Ocena: 5.0"
+          }
+        },
+        {
+          "id": "edu-2",
+          "data": {
+            "school": "Politechnika Warszawska",
+            "field": "Informatyka",
+            "degree": "Licencjat (Inżynier)",
+            "startDate": "2011-10",
+            "endDate": "2014-09",
+            "description": "Praca dyplomowa: \"Systemy rekomendacyjne w e-commerce\". Członek koła naukowego AI. Uczestnictwo w hackathonach (3x zwycięzca)."
+          }
+        }
+      ]
+    },
+    {
+      "id": "certyfikaty-1",
+      "title": "Certyfikaty",
+      "type": "certifications",
+      "items": [
+        {
+          "id": "cert-1",
+          "data": {
+            "name": "AWS Certified Solutions Architect",
+            "issuer": "Amazon Web Services",
+            "date": "2023-06",
+            "credentialId": "AWS-SA-12345678"
+          }
+        },
+        {
+          "id": "cert-2",
+          "data": {
+            "name": "Google Cloud Professional Developer",
+            "issuer": "Google Cloud",
+            "date": "2022-11",
+            "credentialId": "GCP-DEV-98765432"
+          }
+        },
+        {
+          "id": "cert-3",
+          "data": {
+            "name": "MongoDB Certified Developer",
+            "issuer": "MongoDB University",
+            "date": "2021-08"
+          }
+        },
+        {
+          "id": "cert-4",
+          "data": {
+            "name": "Certified Kubernetes Administrator",
+            "issuer": "CNCF",
+            "date": "2023-03",
+            "credentialId": "CKA-2023-45678901"
+          }
+        }
+      ]
+    },
+    {
+      "id": "umiejetnosci-1",
+      "title": "Umiejętności",
+      "type": "skills",
+      "items": [
+        {
+          "id": "skills-1",
+          "data": {
+            "category": "Programowanie",
+            "skills": ["TypeScript", "JavaScript (ES6+)", "Python", "Java", "SQL", "GraphQL"]
+          }
+        },
+        {
+          "id": "skills-2",
+          "data": {
+            "category": "Frontend",
+            "skills": ["React", "Next.js", "Vue.js", "Angular", "HTML5/CSS3", "SASS/SCSS", "Tailwind CSS", "Webpack", "Vite"]
+          }
+        },
+        {
+          "id": "skills-3",
+          "data": {
+            "category": "Backend",
+            "skills": ["Node.js", "Express", "NestJS", "Spring Boot", "FastAPI", "REST API", "Microservices"]
+          }
+        },
+        {
+          "id": "skills-4",
+          "data": {
+            "category": "Bazy danych",
+            "skills": ["PostgreSQL", "MongoDB", "Redis", "MySQL", "DynamoDB", "Prisma ORM", "TypeORM"]
+          }
+        },
+        {
+          "id": "skills-5",
+          "data": {
+            "category": "DevOps & Cloud",
+            "skills": ["AWS", "GCP", "Docker", "Kubernetes", "CI/CD", "GitHub Actions", "GitLab CI", "Terraform", "Ansible"]
+          }
+        },
+        {
+          "id": "skills-6",
+          "data": {
+            "category": "Testowanie",
+            "skills": ["Jest", "Vitest", "Cypress", "Playwright", "Selenium", "JUnit", "PyTest"]
+          }
+        },
+        {
+          "id": "skills-7",
+          "data": {
+            "category": "Inne",
+            "skills": ["Git", "Agile/Scrum", "System Design", "Clean Code", "Design Patterns", "TDD", "Mikroserwisy"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "jezyki-1",
+      "title": "Języki obce",
+      "type": "languages",
+      "items": [
+        {
+          "id": "lang-1",
+          "data": {
+            "language": "Angielski",
+            "level": "C1 - Zaawansowany",
+            "certificates": "IELTS Academic 8.0/9.0 (2023), FCE Grade A (2012)"
+          }
+        },
+        {
+          "id": "lang-2",
+          "data": {
+            "language": "Niemiecki",
+            "level": "B2 - Średnio zaawansowany",
+            "certificates": "Goethe-Zertifikat B2 (2019)"
+          }
+        },
+        {
+          "id": "lang-3",
+          "data": {
+            "language": "Hiszpański",
+            "level": "A2 - Podstawowy"
+          }
+        }
+      ]
+    },
+    {
+      "id": "publikacje-1",
+      "title": "Publikacje i wystąpienia",
+      "type": "custom",
+      "items": [
+        {
+          "id": "pub-1",
+          "data": {
+            "title": "Microservices Architecture: Production Readiness",
+            "description": "Prelekcja na conference.js 2023, Warszawa. 200+ uczestników.",
+            "url": "https://youtube.com/watch?v=example"
+          }
+        },
+        {
+          "id": "pub-2",
+          "data": {
+            "title": "TypeScript Best Practices for Large Scale Applications",
+            "description": "Artykuł na blogu Medium, 50K+ wyświetleń, 2K+ polubień.",
+            "url": "https://medium.com/@jankowalski/typescript-best-practices"
+          }
+        },
+        {
+          "id": "pub-3",
+          "data": {
+            "title": "Building Scalable React Applications",
+            "description": "Warsztat na React Native Warsaw Meetup, 30+ uczestników."
+          }
+        }
+      ]
+    },
+    {
+      "id": "zainteresowania-1",
+      "title": "Zainteresowania i projekty osobiste",
+      "type": "custom",
+      "items": [
+        {
+          "id": "hobby-1",
+          "data": {
+            "name": "Sztuczna Inteligencja",
+            "description": "Samodzielna nauka ML i Deep Learning. Projekty: Image Classification (CNN), Chatbot (NLP), Predictive Analytics."
+          }
+        },
+        {
+          "id": "hobby-2",
+          "data": {
+            "name": "Automatyzacja domowa",
+            "description": "Smart Home system z Home Assistant, niestandardowe integracje, IoT projects (Arduino, ESP32)."
+          }
+        },
+        {
+          "id": "hobby-3",
+          "data": {
+            "name": "Kontrybucja Open Source",
+            "description": "Aktywny contributor do 15+ repozytoriów. Maintainer 3 projektów. 1000+ commitów, 500+ PR merged."
+          }
+        },
+        {
+          "id": "hobby-4",
+          "data": {
+            "name": "Sport",
+            "description": "Bieganie (3 maratony), kolarstwo szosowe, narciarstwo zjazdowe. Treningi 4x tygodniowo."
+          }
+        }
+      ]
+    },
+    {
+      "id": "nagrody-1",
+      "title": "Nagrody i wyróżnienia",
+      "type": "custom",
+      "items": [
+        {
+          "id": "award-1",
+          "data": {
+            "name": "Employee of the Year 2022",
+            "description": "Tech Solutions Sp. z o.o. - za wkład w rozwój platformy e-commerce i mentoring zespołu."
+          }
+        },
+        {
+          "id": "award-2",
+          "data": {
+            "name": "Hackathon Winner 2021",
+            "description": "1. miejsce w AWS GameDay Hackathon - zbudowanie rozwiązania serverless w 24h."
+          }
+        },
+        {
+          "id": "award-3",
+          "data": {
+            "name": "Best Open Source Contributor 2020",
+            "description": "Wyróżnienie od Digital Innovations za aktywność w projektach open source."
+          }
+        }
+      ]
+    }
+  ],
+  "language": "pl"
+}
