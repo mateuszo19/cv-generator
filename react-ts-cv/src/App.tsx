@@ -1,10 +1,25 @@
 import { useState, useRef } from 'react';
 import type { ChangeEvent } from 'react';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import type { CVData, AdditionalInfo, Experience, CustomSection, CustomSectionItem, SectionType } from './types';
 import { CVPreview } from './components/CVPreview';
-import './App.css';
+import { FontPicker, DEFAULT_FONT } from './components/FontPicker';
+import {
+  ItProjectsSection,
+  EducationSection,
+  SkillsSection,
+  CertificationsSection,
+  LanguagesSection,
+  AviationSection,
+  ConstructionSection,
+  CustomGenericSection,
+} from './components/extras';
 
+/**
+ * Root application component responsible for managing CV form state,
+ * rendering the live preview, and handling import/export operations.
+ */
 function App() {
   const cvPreviewRef = useRef<HTMLDivElement>(null);
 
@@ -23,9 +38,11 @@ function App() {
     experience: [],
     customSections: [],
     language: 'pl',
+    cvFont: DEFAULT_FONT,
   });
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    style: true,
     basic: true,
     contact: false,
     summary: false,
@@ -34,6 +51,10 @@ function App() {
     additional: false,
   });
 
+  /**
+   * Toggles the expanded state of a collapsible form section.
+   * @param sectionId - The unique identifier of the section to toggle.
+   */
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) => ({
       ...prev,
@@ -41,6 +62,10 @@ function App() {
     }));
   };
 
+  /**
+   * Changes the CV language and optionally triggers translation via MyMemory API.
+   * @param lang - Target language code ('pl' or 'en').
+   */
   const changeLanguage = async (lang: 'pl' | 'en') => {
     if (lang === cvData.language) return;
 
@@ -54,13 +79,10 @@ function App() {
 
     if (lang === 'en') {
       try {
-        // Tłumaczenie nagłówków i interfejsu
         const translatedData = { ...cvData, language: lang };
 
-        // Tłumaczenie treści CV
         const textsToTranslate: string[] = [];
 
-        // Zbierz wszystkie teksty do tłumaczenia
         if (cvData.summary) textsToTranslate.push(cvData.summary);
         cvData.experience.forEach((exp) => {
           if (exp.jobDescription) textsToTranslate.push(exp.jobDescription);
@@ -92,7 +114,6 @@ function App() {
           });
         });
 
-        // Użyj darmowego API MyMemory do tłumaczenia
         if (textsToTranslate.length > 0) {
           const translations = await Promise.all(
             textsToTranslate.map(async (text) => {
@@ -159,12 +180,14 @@ function App() {
         console.error(error);
       }
     } else {
-      // Przywróć język polski (bez tłumaczenia wstecz)
       setCvData({ ...cvData, language: lang });
     }
   };
 
-  // Dodawanie sekcji personalizowanej
+  /**
+   * Adds a new custom section of the given type to the CV.
+   * @param type - The section type to create.
+   */
   const addCustomSection = (type: SectionType) => {
     const titles: Record<SectionType, string> = {
       'it-projects': 'Projekty IT',
@@ -191,13 +214,20 @@ function App() {
     setExpandedSections({ ...expandedSections, customSections: true });
   };
 
-  // Usuwanie sekcji personalizowanej
+  /**
+   * Removes a custom section by its ID.
+   * @param sectionId - ID of the section to remove.
+   */
   const removeCustomSection = (sectionId: string) => {
     const newSections = cvData.customSections.filter((s) => s.id !== sectionId);
     setCvData({ ...cvData, customSections: newSections });
   };
 
-  // Aktualizacja tytułu sekcji
+  /**
+   * Updates the display title of a custom section.
+   * @param sectionId - ID of the section to update.
+   * @param title - New title value.
+   */
   const updateSectionTitle = (sectionId: string, title: string) => {
     const newSections = cvData.customSections.map((s) =>
       s.id === sectionId ? { ...s, title } : s
@@ -205,7 +235,10 @@ function App() {
     setCvData({ ...cvData, customSections: newSections });
   };
 
-  // Dodawanie elementu do sekcji
+  /**
+   * Appends a new empty item to a custom section based on its type.
+   * @param sectionId - ID of the section to add an item to.
+   */
   const addSectionItem = (sectionId: string) => {
     const section = cvData.customSections.find((s) => s.id === sectionId);
     if (!section) return;
@@ -268,7 +301,13 @@ function App() {
     setCvData({ ...cvData, customSections: newSections });
   };
 
-  // Aktualizacja elementu sekcji
+  /**
+   * Updates a specific field within a custom section item.
+   * @param sectionId - ID of the parent section.
+   * @param itemId - ID of the item to update.
+   * @param field - Field name within the item data.
+   * @param value - New value for the field.
+   */
   const updateSectionItem = (sectionId: string, itemId: string, field: string, value: string | string[]) => {
     const newSections = cvData.customSections.map((s) => {
       if (s.id === sectionId) {
@@ -282,7 +321,11 @@ function App() {
     setCvData({ ...cvData, customSections: newSections });
   };
 
-  // Usuwanie elementu sekcji
+  /**
+   * Removes an item from a custom section.
+   * @param sectionId - ID of the parent section.
+   * @param itemId - ID of the item to remove.
+   */
   const removeSectionItem = (sectionId: string, itemId: string) => {
     const newSections = cvData.customSections.map((s) => {
       if (s.id === sectionId) {
@@ -293,7 +336,11 @@ function App() {
     setCvData({ ...cvData, customSections: newSections });
   };
 
-  // Dodawanie technologii do projektu IT
+  /**
+   * Appends an empty technology entry to an IT project item.
+   * @param sectionId - ID of the parent section.
+   * @param itemId - ID of the IT project item.
+   */
   const addTechnology = (sectionId: string, itemId: string) => {
     const section = cvData.customSections.find((s) => s.id === sectionId);
     if (!section) return;
@@ -305,7 +352,13 @@ function App() {
     updateSectionItem(sectionId, itemId, 'technologies', newTechnologies);
   };
 
-  // Aktualizacja technologii
+  /**
+   * Updates a technology entry at a specific index within an IT project item.
+   * @param sectionId - ID of the parent section.
+   * @param itemId - ID of the IT project item.
+   * @param techIndex - Index of the technology to update.
+   * @param value - New technology name.
+   */
   const updateTechnology = (sectionId: string, itemId: string, techIndex: number, value: string) => {
     const section = cvData.customSections.find((s) => s.id === sectionId);
     if (!section) return;
@@ -318,7 +371,12 @@ function App() {
     updateSectionItem(sectionId, itemId, 'technologies', newTechnologies);
   };
 
-  // Usuwanie technologii
+  /**
+   * Removes a technology entry at a specific index from an IT project item.
+   * @param sectionId - ID of the parent section.
+   * @param itemId - ID of the IT project item.
+   * @param techIndex - Index of the technology to remove.
+   */
   const removeTechnology = (sectionId: string, itemId: string, techIndex: number) => {
     const section = cvData.customSections.find((s) => s.id === sectionId);
     if (!section) return;
@@ -330,7 +388,10 @@ function App() {
     updateSectionItem(sectionId, itemId, 'technologies', newTechnologies);
   };
 
-  // Wczytywanie zdjęcia
+  /**
+   * Reads a selected image file and stores it as a base64 data URL in CV state.
+   * @param e - File input change event.
+   */
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -342,7 +403,9 @@ function App() {
     }
   };
 
-  // Dodawanie informacji dodatkowej
+  /**
+   * Appends an empty additional info entry to the CV.
+   */
   const addAdditionalInfo = () => {
     setCvData({
       ...cvData,
@@ -350,20 +413,43 @@ function App() {
     });
   };
 
-  // Aktualizacja informacji dodatkowej
+  /**
+   * Updates a specific field of an additional info entry.
+   * @param index - Array index of the entry to update.
+   * @param field - Field name to update ('label' or 'content').
+   * @param value - New value.
+   */
   const updateAdditionalInfo = (index: number, field: keyof AdditionalInfo, value: string) => {
     const newInfo = [...cvData.additionalInfo];
     newInfo[index][field] = value;
     setCvData({ ...cvData, additionalInfo: newInfo });
   };
 
-  // Usuwanie informacji dodatkowej
+  /**
+   * Removes an additional info entry at the given index.
+   * @param index - Array index of the entry to remove.
+   */
   const removeAdditionalInfo = (index: number) => {
     const newInfo = cvData.additionalInfo.filter((_, i) => i !== index);
     setCvData({ ...cvData, additionalInfo: newInfo });
   };
 
-  // Dodawanie doświadczenia
+  /**
+   * Moves an additional info entry one position up or down in the list.
+   * @param index - Current array index of the entry.
+   * @param direction - Direction to move: 'up' decrements index, 'down' increments it.
+   */
+  const moveAdditionalInfo = (index: number, direction: 'up' | 'down') => {
+    const newInfo = [...cvData.additionalInfo];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newInfo.length) return;
+    [newInfo[index], newInfo[targetIndex]] = [newInfo[targetIndex], newInfo[index]];
+    setCvData({ ...cvData, additionalInfo: newInfo });
+  };
+
+  /**
+   * Appends a new empty work experience entry to the CV.
+   */
   const addExperience = () => {
     setCvData({
       ...cvData,
@@ -371,7 +457,12 @@ function App() {
     });
   };
 
-  // Aktualizacja doświadczenia
+  /**
+   * Updates a scalar field of a work experience entry.
+   * @param index - Array index of the experience entry.
+   * @param field - Experience field to update.
+   * @param value - New value.
+   */
   const updateExperience = (index: number, field: keyof Experience, value: string) => {
     const newExp = [...cvData.experience];
     if (field !== 'description') {
@@ -380,34 +471,99 @@ function App() {
     }
   };
 
-  // Dodawanie podpunktu w doświadczeniu
+  /**
+   * Appends an empty bullet point to a work experience entry's description list.
+   * @param expIndex - Index of the experience entry.
+   */
   const addDescriptionPoint = (expIndex: number) => {
     const newExp = [...cvData.experience];
     newExp[expIndex].description.push('');
     setCvData({ ...cvData, experience: newExp });
   };
 
-  // Aktualizacja podpunktu w doświadczeniu
+  /**
+   * Updates the text of a specific bullet point within a work experience entry.
+   * @param expIndex - Index of the experience entry.
+   * @param descIndex - Index of the bullet point to update.
+   * @param value - New text value.
+   */
   const updateDescriptionPoint = (expIndex: number, descIndex: number, value: string) => {
     const newExp = [...cvData.experience];
     newExp[expIndex].description[descIndex] = value;
     setCvData({ ...cvData, experience: newExp });
   };
 
-  // Usuwanie podpunktu z doświadczenia
+  /**
+   * Removes a bullet point at a given index from a work experience entry.
+   * @param expIndex - Index of the experience entry.
+   * @param descIndex - Index of the bullet point to remove.
+   */
   const removeDescriptionPoint = (expIndex: number, descIndex: number) => {
     const newExp = [...cvData.experience];
     newExp[expIndex].description = newExp[expIndex].description.filter((_, i) => i !== descIndex);
     setCvData({ ...cvData, experience: newExp });
   };
 
-  // Usuwanie doświadczenia
+  /**
+   * Removes a work experience entry at the given index.
+   * @param index - Index of the experience entry to remove.
+   */
   const removeExperience = (index: number) => {
     const newExp = cvData.experience.filter((_, i) => i !== index);
     setCvData({ ...cvData, experience: newExp });
   };
 
-  // Zapis do JSON
+  /**
+   * Moves a work experience entry one position up or down in the list.
+   * @param index - Current array index of the entry.
+   * @param direction - Direction to move: 'up' decrements index, 'down' increments it.
+   */
+  const moveExperience = (index: number, direction: 'up' | 'down') => {
+    const newExp = [...cvData.experience];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newExp.length) return;
+    [newExp[index], newExp[targetIndex]] = [newExp[targetIndex], newExp[index]];
+    setCvData({ ...cvData, experience: newExp });
+  };
+
+  /**
+   * Moves a custom section one position up or down in the sections list.
+   * @param sectionId - ID of the section to move.
+   * @param direction - Direction to move.
+   */
+  const moveCustomSection = (sectionId: string, direction: 'up' | 'down') => {
+    const index = cvData.customSections.findIndex((s) => s.id === sectionId);
+    if (index === -1) return;
+    const newSections = [...cvData.customSections];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newSections.length) return;
+    [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+    setCvData({ ...cvData, customSections: newSections });
+  };
+
+  /**
+   * Moves an item within a custom section one position up or down.
+   * @param sectionId - ID of the parent section.
+   * @param itemId - ID of the item to move.
+   * @param direction - Direction to move.
+   */
+  const moveCustomSectionItem = (sectionId: string, itemId: string, direction: 'up' | 'down') => {
+    const newSections = cvData.customSections.map((s) => {
+      if (s.id !== sectionId) return s;
+      const index = s.items.findIndex((i) => i.id === itemId);
+      if (index === -1) return s;
+      const newItems = [...s.items];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= newItems.length) return s;
+      [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
+      return { ...s, items: newItems };
+    });
+    setCvData({ ...cvData, customSections: newSections });
+  };
+
+  /**
+   * Serialises the current CV data to a JSON file and triggers a download.
+   */
   const saveToJSON = () => {
     const dataStr = JSON.stringify(cvData, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
@@ -419,7 +575,10 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Wczytanie z JSON
+  /**
+   * Reads a JSON file selected by the user and restores CV state from it.
+   * @param e - File input change event.
+   */
   const loadFromJSON = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -437,7 +596,9 @@ function App() {
     }
   };
 
-  // Czyszczenie formularza
+  /**
+   * Resets all CV fields to their initial empty state after user confirmation.
+   */
   const clearForm = () => {
     if (window.confirm('Czy na pewno chcesz wyczyścić formularz?')) {
       setCvData({
@@ -455,126 +616,183 @@ function App() {
         experience: [],
         customSections: [],
         language: 'pl',
+        cvFont: DEFAULT_FONT,
       });
     }
   };
 
-  // Drukowanie
+  /**
+   * Triggers the browser's native print dialog.
+   */
   const printCV = () => {
     window.print();
   };
 
-  // Generowanie PDF
-  const generatePDF = () => {
+  /**
+   * Generates and downloads a multi-page A4 PDF of the CV preview.
+   * Renders the DOM element to a canvas with html2canvas, then slices it
+   * into A4 pages using jsPDF.
+   */
+  const generatePDF = async () => {
     const element = cvPreviewRef.current;
     if (!element) return;
 
-    const opt = {
-      margin: 10,
-      filename: `cv-${cvData.firstName}-${cvData.lastName || 'cv'}.pdf`,
-      image: { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
-    };
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+      });
 
-    html2pdf().set(opt).from(element).save();
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const ratio = pageWidth / canvas.width;
+      const scaledImgHeight = canvas.height * ratio;
+
+      let yOffset = 0;
+      while (yOffset < scaledImgHeight) {
+        if (yOffset > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, -yOffset, pageWidth, scaledImgHeight);
+        yOffset += pageHeight;
+      }
+
+      pdf.save(`cv-${cvData.firstName}-${cvData.lastName || 'cv'}.pdf`);
+    } catch (error) {
+      alert('Błąd podczas generowania PDF. Spróbuj użyć opcji Drukuj.');
+      console.error(error);
+    }
   };
 
+  /**
+   * Returns the className string for a collapsible section header based on its expanded state.
+   * @param expanded - Whether the section is currently expanded.
+   * @returns Tailwind class string for the header element.
+   */
+  const headerClass = (expanded: boolean) =>
+    `flex justify-between items-center px-5 py-4 cursor-pointer select-none transition-all border-b ${
+      expanded
+        ? 'bg-white border-gray-300'
+        : 'bg-gray-50 border-transparent hover:bg-gray-100'
+    }`;
+
   return (
-    <div className="main-container">
-      {/* Panel podglądu - lewa strona (60%) */}
-      <div className="preview-panel">
+    <div className="grid grid-cols-1 md:grid-cols-[50%_50%] lg:grid-cols-[60%_40%] min-h-screen bg-gray-100 print:block">
+
+      <div className="bg-white p-5 lg:p-10 overflow-y-auto h-auto lg:h-screen print:w-full print:h-auto print:overflow-visible print:p-0">
         <CVPreview ref={cvPreviewRef} data={cvData} />
       </div>
 
-      {/* Panel formularza - prawa strona (40%) */}
-      <div className="form-panel">
-        {/* Przełącznik języka */}
-        <div className="language-switcher">
+      <div className="bg-white px-4 lg:px-5 py-6 lg:py-8 overflow-y-auto h-auto lg:h-screen border-l border-gray-300 print:hidden">
+
+        <div className="flex gap-2.5 mb-5 justify-center">
           <button
-            className={`lang-btn ${cvData.language === 'pl' ? 'active' : ''}`}
+            className={`flex items-center gap-2 px-5 py-2.5 border-2 rounded text-base font-semibold cursor-pointer transition-all ${
+              cvData.language === 'pl'
+                ? 'bg-gray-900 border-gray-900 text-white'
+                : 'border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400'
+            }`}
             onClick={() => changeLanguage('pl')}
           >
-            <span className="flag">🇵🇱</span> PL
+            <span className="text-xl">🇵🇱</span> PL
           </button>
           <button
-            className={`lang-btn ${cvData.language === 'en' ? 'active' : ''}`}
+            className={`flex items-center gap-2 px-5 py-2.5 border-2 rounded text-base font-semibold cursor-pointer transition-all ${
+              cvData.language === 'en'
+                ? 'bg-gray-900 border-gray-900 text-white'
+                : 'border-gray-300 bg-white text-gray-900 hover:bg-gray-50 hover:border-gray-400'
+            }`}
             onClick={() => changeLanguage('en')}
           >
-            <span className="flag">🇬🇧</span> EN
+            <span className="text-xl">🇬🇧</span> EN
           </button>
         </div>
 
-        {/* Przyciski akcji */}
-        <div className="action-buttons">
-          <div style={{ display: 'flex', gap: '10px', flex: '1' }}>
-            <button onClick={saveToJSON} className="btn btn-primary" style={{ flex: 1 }}>
-              Zapisz do JSON
+        <div className="flex gap-2.5 mb-5 flex-wrap">
+          <div className="flex gap-2.5 flex-1">
+            <button onClick={saveToJSON} className="btn btn-primary flex-1">
+              Zapisz do pliku
             </button>
-            <label className="btn" style={{ flex: 1 }}>
-              Wczytaj z JSON
-              <input type="file" onChange={loadFromJSON} accept=".json" style={{ display: 'none' }} />
+            <label className="btn flex-1 cursor-pointer justify-center">
+              Wczytaj z pliku
+              <input type="file" onChange={loadFromJSON} accept=".json" className="hidden" />
             </label>
           </div>
-          <div style={{ display: 'flex', gap: '10px', flex: '1' }}>
-            <button onClick={printCV} className="btn btn-print" style={{ flex: 1 }}>
+          <div className="flex gap-2.5 flex-1">
+            <button onClick={printCV} className="btn btn-primary flex-1">
               Drukuj
             </button>
-            <button onClick={generatePDF} className="btn btn-print" style={{ flex: 1 }}>
+            <button onClick={generatePDF} className="btn btn-primary flex-1">
               Generuj PDF
             </button>
           </div>
-          <button onClick={clearForm} className="btn btn-danger">
+          <button onClick={clearForm} className="btn btn-danger w-full">
             Wyczyść
           </button>
         </div>
 
-        {/* Sekcja: Dane podstawowe */}
-        <div className={`collapsible-section ${expandedSections.basic ? 'expanded' : ''}`}>
-          <div className="collapsible-header" onClick={() => toggleSection('basic')}>
-            <span className="collapsible-title">Dane podstawowe</span>
-            <span className="collapsible-icon">▼</span>
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className={headerClass(expandedSections.style)} onClick={() => toggleSection('style')}>
+            <span className="font-semibold text-gray-900 text-[15px]">Styl CV</span>
+            <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.style ? 'rotate-180' : ''}`}>▼</span>
+          </div>
+          {expandedSections.style && (
+            <div className="p-5">
+              <p className="block mb-3 text-gray-900 font-medium text-sm">Czcionka dokumentu:</p>
+              <FontPicker
+                value={cvData.cvFont}
+                onChange={(font) => setCvData({ ...cvData, cvFont: font })}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className={headerClass(expandedSections.basic)} onClick={() => toggleSection('basic')}>
+            <span className="font-semibold text-gray-900 text-[15px]">Dane podstawowe</span>
+            <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.basic ? 'rotate-180' : ''}`}>▼</span>
           </div>
           {expandedSections.basic && (
-            <div className="collapsible-content">
-              <div className="form-group">
-                <label>Imię:</label>
+            <div className="p-5">
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Imię:</label>
                 <input
                   type="text"
+                  className="form-input w-full"
                   value={cvData.firstName}
-                  onChange={(e) => {
-                    console.log('firstName onChange:', e.target.value);
-                    setCvData({ ...cvData, firstName: e.target.value });
-                  }}
+                  onChange={(e) => setCvData({ ...cvData, firstName: e.target.value })}
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>Nazwisko:</label>
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Nazwisko:</label>
                 <input
                   type="text"
+                  className="form-input w-full"
                   value={cvData.lastName}
-                  onChange={(e) => {
-                    console.log('lastName onChange:', e.target.value);
-                    setCvData({ ...cvData, lastName: e.target.value });
-                  }}
+                  onChange={(e) => setCvData({ ...cvData, lastName: e.target.value })}
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>Data urodzenia:</label>
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Data urodzenia:</label>
                 <input
                   type="date"
+                  className="form-input w-full"
                   value={cvData.birthDate}
                   onChange={(e) => setCvData({ ...cvData, birthDate: e.target.value })}
                 />
               </div>
-              <div className="form-group">
-                <label>Zdjęcie:</label>
-                <input type="file" onChange={handlePhotoChange} accept="image/*" />
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Zdjęcie:</label>
+                <input type="file" onChange={handlePhotoChange} accept="image/*" className="text-sm" />
                 {cvData.photo && (
-                  <div className="photo-preview">
-                    <img src={cvData.photo} alt="Podgląd" />
+                  <div className="mt-2.5">
+                    <img src={cvData.photo} alt="Podgląd" className="max-w-[200px] max-h-[200px] rounded border-2 border-gray-300" />
                   </div>
                 )}
               </div>
@@ -582,52 +800,56 @@ function App() {
           )}
         </div>
 
-        {/* Sekcja: Dane kontaktowe */}
-        <div className={`collapsible-section ${expandedSections.contact ? 'expanded' : ''}`}>
-          <div className="collapsible-header" onClick={() => toggleSection('contact')}>
-            <span className="collapsible-title">Dane kontaktowe</span>
-            <span className="collapsible-icon">▼</span>
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className={headerClass(expandedSections.contact)} onClick={() => toggleSection('contact')}>
+            <span className="font-semibold text-gray-900 text-[15px]">Dane kontaktowe</span>
+            <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.contact ? 'rotate-180' : ''}`}>▼</span>
           </div>
           {expandedSections.contact && (
-            <div className="collapsible-content">
-              <div className="form-group">
-                <label>Adres:</label>
+            <div className="p-5">
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Adres:</label>
                 <input
                   type="text"
+                  className="form-input w-full"
                   value={cvData.address}
                   onChange={(e) => setCvData({ ...cvData, address: e.target.value })}
                 />
               </div>
-              <div className="form-group">
-                <label>Miejscowość:</label>
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Miejscowość:</label>
                 <input
                   type="text"
+                  className="form-input w-full"
                   value={cvData.city}
                   onChange={(e) => setCvData({ ...cvData, city: e.target.value })}
                 />
               </div>
-              <div className="form-group">
-                <label>Kod pocztowy:</label>
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Kod pocztowy:</label>
                 <input
                   type="text"
+                  className="form-input w-full"
                   value={cvData.postalCode}
                   onChange={(e) => setCvData({ ...cvData, postalCode: e.target.value })}
                   placeholder="00-000"
                 />
               </div>
-              <div className="form-group">
-                <label>Numer telefonu:</label>
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Numer telefonu:</label>
                 <input
                   type="tel"
+                  className="form-input w-full"
                   value={cvData.phone}
                   onChange={(e) => setCvData({ ...cvData, phone: e.target.value })}
                   placeholder="+48 000 000 000"
                 />
               </div>
-              <div className="form-group">
-                <label>Adres e-mail:</label>
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Adres e-mail:</label>
                 <input
                   type="email"
+                  className="form-input w-full"
                   value={cvData.email}
                   onChange={(e) => setCvData({ ...cvData, email: e.target.value })}
                 />
@@ -636,99 +858,121 @@ function App() {
           )}
         </div>
 
-        {/* Sekcja: Opis */}
-        <div className={`collapsible-section ${expandedSections.summary ? 'expanded' : ''}`}>
-          <div className="collapsible-header" onClick={() => toggleSection('summary')}>
-            <span className="collapsible-title">Opis zawodowy</span>
-            <span className="collapsible-icon">▼</span>
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className={headerClass(expandedSections.summary)} onClick={() => toggleSection('summary')}>
+            <span className="font-semibold text-gray-900 text-[15px]">Opis zawodowy</span>
+            <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.summary ? 'rotate-180' : ''}`}>▼</span>
           </div>
           {expandedSections.summary && (
-            <div className="collapsible-content">
-              <div className="form-group">
-                <label>Krótki opis (np. profil zawodowy, podsumowanie):</label>
+            <div className="p-5">
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Krótki opis (np. profil zawodowy, podsumowanie):</label>
                 <textarea
+                  className="form-input w-full resize-none"
                   value={cvData.summary}
                   onChange={(e) => setCvData({ ...cvData, summary: e.target.value })}
                   placeholder="Opisz swoje mocne strony, cele zawodowe, doświadczenie..."
                   rows={4}
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: '4px', fontSize: '14px', fontFamily: 'var(--font-family-ui)' }}
                 />
               </div>
             </div>
           )}
         </div>
 
-        {/* Sekcja: Doświadczenie zawodowe */}
-        <div className={`collapsible-section ${expandedSections.experience ? 'expanded' : ''}`}>
-          <div className="collapsible-header" onClick={() => toggleSection('experience')}>
-            <span className="collapsible-title">Doświadczenie zawodowe</span>
-            <span className="collapsible-icon">▼</span>
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className={headerClass(expandedSections.experience)} onClick={() => toggleSection('experience')}>
+            <span className="font-semibold text-gray-900 text-[15px]">Doświadczenie zawodowe</span>
+            <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.experience ? 'rotate-180' : ''}`}>▼</span>
           </div>
           {expandedSections.experience && (
-            <div className="collapsible-content">
+            <div className="p-5">
               {cvData.experience.map((exp, expIndex) => (
-                <div key={expIndex} className="experience-item">
-                  <div className="form-group">
-                    <label>Nazwa firmy:</label>
+                <div key={expIndex} className="bg-white p-5 rounded-md mb-[15px] border border-gray-300 hover:border-gray-400">
+                  <div className="flex justify-end gap-1 mb-3">
+                    <button
+                      type="button"
+                      onClick={() => moveExperience(expIndex, 'up')}
+                      disabled={expIndex === 0}
+                      className="px-2 py-0.5 text-xs border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                      title="Przesuń w górę"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveExperience(expIndex, 'down')}
+                      disabled={expIndex === cvData.experience.length - 1}
+                      className="px-2 py-0.5 text-xs border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                      title="Przesuń w dół"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                  <div className="mb-[15px]">
+                    <label className="block mb-1.5 text-gray-900 font-medium text-sm">Nazwa firmy:</label>
                     <input
                       type="text"
+                      className="form-input w-full"
                       value={exp.company}
                       onChange={(e) => updateExperience(expIndex, 'company', e.target.value)}
                       placeholder="np. ABC Sp. z o.o."
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Stanowisko:</label>
+                  <div className="mb-[15px]">
+                    <label className="block mb-1.5 text-gray-900 font-medium text-sm">Stanowisko:</label>
                     <input
                       type="text"
+                      className="form-input w-full"
                       value={exp.position}
                       onChange={(e) => updateExperience(expIndex, 'position', e.target.value)}
                       placeholder="np. Programista"
                     />
                   </div>
-                  <div style={{ display: 'flex', gap: '15px' }}>
-                    <div className="form-group" style={{ flex: 1 }}>
-                      <label>Data od:</label>
+                  <div className="flex gap-[15px]">
+                    <div className="mb-[15px] flex-1">
+                      <label className="block mb-1.5 text-gray-900 font-medium text-sm">Data od:</label>
                       <input
                         type="date"
+                        className="form-input w-full"
                         value={exp.startDate}
                         onChange={(e) => updateExperience(expIndex, 'startDate', e.target.value)}
                       />
                     </div>
-                    <div className="form-group" style={{ flex: 1 }}>
-                      <label>Data do:</label>
+                    <div className="mb-[15px] flex-1">
+                      <label className="block mb-1.5 text-gray-900 font-medium text-sm">Data do:</label>
                       <input
                         type="date"
+                        className="form-input w-full"
                         value={exp.endDate}
                         onChange={(e) => updateExperience(expIndex, 'endDate', e.target.value)}
                       />
                     </div>
                   </div>
-                  <div className="form-group">
-                    <label>Opis stanowiska:</label>
+                  <div className="mb-[15px]">
+                    <label className="block mb-1.5 text-gray-900 font-medium text-sm">Opis stanowiska:</label>
                     <textarea
+                      className="form-input w-full resize-none"
                       value={exp.jobDescription}
                       onChange={(e) => updateExperience(expIndex, 'jobDescription', e.target.value)}
                       placeholder="Ogólny opis stanowiska, zakresu odpowiedzialności..."
                       rows={3}
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: '4px', fontSize: '14px', fontFamily: 'var(--font-family-ui)' }}
                     />
                   </div>
-                  <div className="form-group">
-                    <label>Opis obowiązków (podpunkty):</label>
+                  <div className="mb-[15px]">
+                    <label className="block mb-1.5 text-gray-900 font-medium text-sm">Opis obowiązków (podpunkty):</label>
                     {exp.description.map((desc, descIndex) => (
-                      <div key={descIndex} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                      <div key={descIndex} className="flex gap-2.5 mb-2.5">
                         <input
                           type="text"
+                          className="form-input flex-1"
                           value={desc}
                           onChange={(e) => updateDescriptionPoint(expIndex, descIndex, e.target.value)}
                           placeholder="np. Programowanie aplikacji webowych"
-                          style={{ flex: 1 }}
                         />
                         <button
                           type="button"
                           onClick={() => removeDescriptionPoint(expIndex, descIndex)}
-                          className="btn btn-remove"
+                          className="btn-remove"
                         >
                           Usuń
                         </button>
@@ -737,8 +981,7 @@ function App() {
                     <button
                       type="button"
                       onClick={() => addDescriptionPoint(expIndex)}
-                      className="btn btn-add"
-                      style={{ fontSize: '14px', padding: '8px 16px' }}
+                      className="btn-add"
                     >
                       + Dodaj podpunkt
                     </button>
@@ -746,38 +989,58 @@ function App() {
                   <button
                     type="button"
                     onClick={() => removeExperience(expIndex)}
-                    className="btn btn-remove"
-                    style={{ marginTop: '10px' }}
+                    className="btn-remove mt-2.5"
                   >
                     Usuń doświadczenie
                   </button>
                 </div>
               ))}
-              <button type="button" onClick={addExperience} className="btn btn-add">
+              <button type="button" onClick={addExperience} className="btn-add">
                 + Dodaj doświadczenie
               </button>
             </div>
           )}
         </div>
 
-        {/* Sekcja: Informacje dodatkowe */}
-        <div className={`collapsible-section ${expandedSections.additional ? 'expanded' : ''}`}>
-          <div className="collapsible-header" onClick={() => toggleSection('additional')}>
-            <span className="collapsible-title">Informacje dodatkowe</span>
-            <span className="collapsible-icon">▼</span>
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className={headerClass(expandedSections.additional)} onClick={() => toggleSection('additional')}>
+            <span className="font-semibold text-gray-900 text-[15px]">Informacje dodatkowe</span>
+            <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.additional ? 'rotate-180' : ''}`}>▼</span>
           </div>
           {expandedSections.additional && (
-            <div className="collapsible-content">
+            <div className="p-5">
               {cvData.additionalInfo.map((info, index) => (
-                <div key={index} className="additional-info-item">
+                <div key={index} className="flex gap-2.5 items-center mb-[15px] bg-white p-[15px] rounded border border-gray-300">
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveAdditionalInfo(index, 'up')}
+                      disabled={index === 0}
+                      className="px-2 py-0.5 text-xs border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                      title="Przesuń w górę"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveAdditionalInfo(index, 'down')}
+                      disabled={index === cvData.additionalInfo.length - 1}
+                      className="px-2 py-0.5 text-xs border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                      title="Przesuń w dół"
+                    >
+                      ▼
+                    </button>
+                  </div>
                   <input
                     type="text"
+                    className="form-input flex-1 min-w-[200px]"
                     value={info.label}
                     onChange={(e) => updateAdditionalInfo(index, 'label', e.target.value)}
                     placeholder="np. Prawo jazdy"
                   />
                   <input
                     type="text"
+                    className="form-input flex-[2]"
                     value={info.content}
                     onChange={(e) => updateAdditionalInfo(index, 'content', e.target.value)}
                     placeholder="np. Kat. B"
@@ -785,508 +1048,87 @@ function App() {
                   <button
                     type="button"
                     onClick={() => removeAdditionalInfo(index)}
-                    className="btn btn-remove"
+                    className="btn-remove"
                   >
                     Usuń
                   </button>
                 </div>
               ))}
-              <button type="button" onClick={addAdditionalInfo} className="btn btn-add">
+              <button type="button" onClick={addAdditionalInfo} className="btn-add">
                 + Dodaj informację
               </button>
             </div>
           )}
         </div>
 
-        {/* Sekcja: Sekcje personalizowane */}
-        <div className={`collapsible-section ${expandedSections.customSections ? 'expanded' : ''}`}>
-          <div className="collapsible-header" onClick={() => toggleSection('customSections')}>
-            <span className="collapsible-title">Sekcje personalizowane</span>
-            <span className="collapsible-icon">▼</span>
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className={headerClass(expandedSections.customSections)} onClick={() => toggleSection('customSections')}>
+            <span className="font-semibold text-gray-900 text-[15px]">Sekcje personalizowane</span>
+            <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.customSections ? 'rotate-180' : ''}`}>▼</span>
           </div>
           {expandedSections.customSections && (
-            <div className="collapsible-content">
-              {/* Przyciski dodawania sekcji */}
-              <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <p style={{ fontWeight: '600', marginBottom: '10px', color: 'var(--color-text-primary)' }}>
-                  Dodaj sekcję:
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                  <button type="button" onClick={() => addCustomSection('it-projects')} className="btn btn-add" style={{ fontSize: '14px' }}>
-                    + Projekty IT
-                  </button>
-                  <button type="button" onClick={() => addCustomSection('education')} className="btn btn-add" style={{ fontSize: '14px' }}>
-                    + Wykształcenie
-                  </button>
-                  <button type="button" onClick={() => addCustomSection('skills')} className="btn btn-add" style={{ fontSize: '14px' }}>
-                    + Umiejętności
-                  </button>
-                  <button type="button" onClick={() => addCustomSection('certifications')} className="btn btn-add" style={{ fontSize: '14px' }}>
-                    + Certyfikaty
-                  </button>
-                  <button type="button" onClick={() => addCustomSection('languages')} className="btn btn-add" style={{ fontSize: '14px' }}>
-                    + Języki obce
-                  </button>
-                  <button type="button" onClick={() => addCustomSection('aviation')} className="btn btn-add" style={{ fontSize: '14px' }}>
-                    + Lotnictwo
-                  </button>
-                  <button type="button" onClick={() => addCustomSection('construction')} className="btn btn-add" style={{ fontSize: '14px' }}>
-                    + Budownictwo
-                  </button>
-                  <button type="button" onClick={() => addCustomSection('custom')} className="btn btn-add" style={{ fontSize: '14px' }}>
-                    + Własna sekcja
-                  </button>
+            <div className="p-5">
+              <div className="mb-5 flex flex-col gap-2.5">
+                <p className="font-semibold mb-2.5 text-gray-900">Dodaj sekcję:</p>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button type="button" onClick={() => addCustomSection('it-projects')} className="btn-add">+ Projekty IT</button>
+                  <button type="button" onClick={() => addCustomSection('education')} className="btn-add">+ Wykształcenie</button>
+                  <button type="button" onClick={() => addCustomSection('skills')} className="btn-add">+ Umiejętności</button>
+                  <button type="button" onClick={() => addCustomSection('certifications')} className="btn-add">+ Certyfikaty</button>
+                  <button type="button" onClick={() => addCustomSection('languages')} className="btn-add">+ Języki obce</button>
+                  <button type="button" onClick={() => addCustomSection('aviation')} className="btn-add">+ Lotnictwo</button>
+                  <button type="button" onClick={() => addCustomSection('construction')} className="btn-add">+ Budownictwo</button>
+                  <button type="button" onClick={() => addCustomSection('custom')} className="btn-add">+ Własna sekcja</button>
                 </div>
               </div>
 
-              {/* Wyświetlanie dodanych sekcji */}
-              {cvData.customSections.map((section) => (
-                <div key={section.id} style={{ border: '2px solid var(--color-border-dark)', borderRadius: '8px', padding: '20px', marginBottom: '20px', background: 'var(--color-bg-secondary)' }}>
-                  {/* Tytuł sekcji i przycisk usuń */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <input
-                      type="text"
-                      value={section.title}
-                      onChange={(e) => updateSectionTitle(section.id, e.target.value)}
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: '600',
-                        border: 'none',
-                        background: 'transparent',
-                        color: 'var(--color-text-primary)',
-                        flex: 1,
-                        marginRight: '10px'
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeCustomSection(section.id)}
-                      className="btn btn-remove"
-                      style={{ padding: '6px 12px', fontSize: '13px' }}
-                    >
-                      Usuń sekcję
-                    </button>
-                  </div>
+              {cvData.customSections.map((section, sectionIndex) => {
+                const baseProps = {
+                  section,
+                  onUpdateTitle: updateSectionTitle,
+                  onRemoveSection: removeCustomSection,
+                  onMoveSection: moveCustomSection,
+                  isFirst: sectionIndex === 0,
+                  isLast: sectionIndex === cvData.customSections.length - 1,
+                  onAddItem: addSectionItem,
+                  onRemoveItem: removeSectionItem,
+                  onUpdateItem: updateSectionItem,
+                  onMoveItem: moveCustomSectionItem,
+                };
 
-                  {/* Projekty IT */}
-                  {section.type === 'it-projects' && (
-                    <div>
-                      {section.items.map((item) => (
-                        <div key={item.id} style={{ background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
-                          <div className="form-group">
-                            <label>Nazwa projektu:</label>
-                            <input
-                              type="text"
-                              value={item.data.name as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'name', e.target.value)}
-                              placeholder="np. Aplikacja webowa e-commerce"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Opis:</label>
-                            <textarea
-                              value={item.data.description as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'description', e.target.value)}
-                              placeholder="Krótki opis projektu..."
-                              rows={2}
-                              style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: '4px', fontSize: '14px' }}
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Technologie:</label>
-                            {Array.isArray(item.data.technologies) && (item.data.technologies as string[]).map((tech, techIndex) => (
-                              <div key={techIndex} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                                <input
-                                  type="text"
-                                  value={tech}
-                                  onChange={(e) => updateTechnology(section.id, item.id, techIndex, e.target.value)}
-                                  placeholder="np. React, TypeScript, Node.js"
-                                  style={{ flex: 1 }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => removeTechnology(section.id, item.id, techIndex)}
-                                  className="btn btn-remove"
-                                  style={{ padding: '5px 10px' }}
-                                >
-                                  Usuń
-                                </button>
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() => addTechnology(section.id, item.id)}
-                              className="btn btn-add"
-                              style={{ fontSize: '13px', padding: '6px 12px' }}
-                            >
-                              + Dodaj technologię
-                            </button>
-                          </div>
-                          <div className="form-group">
-                            <label>Link (opcjonalnie):</label>
-                            <input
-                              type="url"
-                              value={item.data.link as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'link', e.target.value)}
-                              placeholder="https://github.com/..."
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSectionItem(section.id, item.id)}
-                            className="btn btn-remove"
-                            style={{ marginTop: '10px' }}
-                          >
-                            Usuń projekt
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addSectionItem(section.id)}
-                        className="btn btn-add"
-                        style={{ width: '100%' }}
-                      >
-                        + Dodaj projekt
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Wykształcenie */}
-                  {section.type === 'education' && (
-                    <div>
-                      {section.items.map((item) => (
-                        <div key={item.id} style={{ background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
-                          <div className="form-group">
-                            <label>Szkoła/Uczelnia:</label>
-                            <input
-                              type="text"
-                              value={item.data.school as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'school', e.target.value)}
-                              placeholder="np. Politechnika Warszawska"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Stopień:</label>
-                            <input
-                              type="text"
-                              value={item.data.degree as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'degree', e.target.value)}
-                              placeholder="np. Inżynier, Magister"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Kierunek:</label>
-                            <input
-                              type="text"
-                              value={item.data.field as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'field', e.target.value)}
-                              placeholder="np. Informatyka"
-                            />
-                          </div>
-                          <div style={{ display: 'flex', gap: '15px' }}>
-                            <div className="form-group" style={{ flex: 1 }}>
-                              <label>Data od:</label>
-                              <input
-                                type="text"
-                                value={item.data.startDate as string}
-                                onChange={(e) => updateSectionItem(section.id, item.id, 'startDate', e.target.value)}
-                                placeholder="np. 2018"
-                              />
-                            </div>
-                            <div className="form-group" style={{ flex: 1 }}>
-                              <label>Data do:</label>
-                              <input
-                                type="text"
-                                value={item.data.endDate as string}
-                                onChange={(e) => updateSectionItem(section.id, item.id, 'endDate', e.target.value)}
-                                placeholder="np. 2022 lub puste"
-                              />
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSectionItem(section.id, item.id)}
-                            className="btn btn-remove"
-                            style={{ marginTop: '10px' }}
-                          >
-                            Usuń
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addSectionItem(section.id)}
-                        className="btn btn-add"
-                        style={{ width: '100%' }}
-                      >
-                        + Dodaj wykształcenie
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Umiejętności */}
-                  {section.type === 'skills' && (
-                    <div>
-                      {section.items.map((item) => (
-                        <div key={item.id} style={{ background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
-                          <div className="form-group">
-                            <label>Kategoria:</label>
-                            <input
-                              type="text"
-                              value={item.data.category as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'category', e.target.value)}
-                              placeholder="np. Programowanie, Design, Języki"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Umiejętności:</label>
-                            <textarea
-                              value={item.data.skills as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'skills', e.target.value)}
-                              placeholder="Wymień umiejętności po przecinku..."
-                              rows={2}
-                              style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: '4px', fontSize: '14px' }}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSectionItem(section.id, item.id)}
-                            className="btn btn-remove"
-                            style={{ marginTop: '10px' }}
-                          >
-                            Usuń
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addSectionItem(section.id)}
-                        className="btn btn-add"
-                        style={{ width: '100%' }}
-                      >
-                        + Dodaj kategorię
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Certyfikaty */}
-                  {section.type === 'certifications' && (
-                    <div>
-                      {section.items.map((item) => (
-                        <div key={item.id} style={{ background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
-                          <div className="form-group">
-                            <label>Nazwa certyfikatu:</label>
-                            <input
-                              type="text"
-                              value={item.data.name as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'name', e.target.value)}
-                              placeholder="np. AWS Solutions Architect"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Organizacja:</label>
-                            <input
-                              type="text"
-                              value={item.data.issuer as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'issuer', e.target.value)}
-                              placeholder="np. Amazon Web Services"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Data uzyskania:</label>
-                            <input
-                              type="text"
-                              value={item.data.date as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'date', e.target.value)}
-                              placeholder="np. 01/2023"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSectionItem(section.id, item.id)}
-                            className="btn btn-remove"
-                            style={{ marginTop: '10px' }}
-                          >
-                            Usuń
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addSectionItem(section.id)}
-                        className="btn btn-add"
-                        style={{ width: '100%' }}
-                      >
-                        + Dodaj certyfikat
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Języki obce */}
-                  {section.type === 'languages' && (
-                    <div>
-                      {section.items.map((item) => (
-                        <div key={item.id} style={{ background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
-                          <div className="form-group">
-                            <label>Język:</label>
-                            <input
-                              type="text"
-                              value={item.data.language as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'language', e.target.value)}
-                              placeholder="np. Angielski"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Poziom:</label>
-                            <input
-                              type="text"
-                              value={item.data.level as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'level', e.target.value)}
-                              placeholder="np. B2, C1, ICAO Level 4"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSectionItem(section.id, item.id)}
-                            className="btn btn-remove"
-                            style={{ marginTop: '10px' }}
-                          >
-                            Usuń
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addSectionItem(section.id)}
-                        className="btn btn-add"
-                        style={{ width: '100%' }}
-                      >
-                        + Dodaj język
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Lotnictwo */}
-                  {section.type === 'aviation' && (
-                    <div>
-                      {section.items.map((item) => (
-                        <div key={item.id} style={{ background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
-                          <div className="form-group">
-                            <label>Licencja/Uprawnienia:</label>
-                            <input
-                              type="text"
-                              value={item.data.license as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'license', e.target.value)}
-                              placeholder="np. CPL, ATPL, PPL"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Liczba godzin:</label>
-                            <input
-                              type="text"
-                              value={item.data.hours as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'hours', e.target.value)}
-                              placeholder="np. 250 godzin"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Typ:</label>
-                            <input
-                              type="text"
-                              value={item.data.type as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'type', e.target.value)}
-                              placeholder="np. SAM, TMG, MEP"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSectionItem(section.id, item.id)}
-                            className="btn btn-remove"
-                            style={{ marginTop: '10px' }}
-                          >
-                            Usuń
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addSectionItem(section.id)}
-                        className="btn btn-add"
-                        style={{ width: '100%' }}
-                      >
-                        + Dodaj wpis
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Budownictwo */}
-                  {section.type === 'construction' && (
-                    <div>
-                      {section.items.map((item) => (
-                        <div key={item.id} style={{ background: 'white', padding: '15px', borderRadius: '6px', marginBottom: '12px', border: '1px solid var(--color-border)' }}>
-                          <div className="form-group">
-                            <label>Projekt:</label>
-                            <input
-                              type="text"
-                              value={item.data.project as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'project', e.target.value)}
-                              placeholder="np. Wieżowiec, Centrum handlowe"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Rola:</label>
-                            <input
-                              type="text"
-                              value={item.data.role as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'role', e.target.value)}
-                              placeholder="np. Kierownik budowy, Inżynier"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Okres:</label>
-                            <input
-                              type="text"
-                              value={item.data.duration as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'duration', e.target.value)}
-                              placeholder="np. 2020-2022"
-                            />
-                          </div>
-                          <div className="form-group">
-                            <label>Zakres:</label>
-                            <textarea
-                              value={item.data.scope as string}
-                              onChange={(e) => updateSectionItem(section.id, item.id, 'scope', e.target.value)}
-                              placeholder="Opis zakresu prac..."
-                              rows={2}
-                              style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--color-border)', borderRadius: '4px', fontSize: '14px' }}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeSectionItem(section.id, item.id)}
-                            className="btn btn-remove"
-                            style={{ marginTop: '10px' }}
-                          >
-                            Usuń
-                          </button>
-                        </div>
-                      ))}
-                      <button
-                        type="button"
-                        onClick={() => addSectionItem(section.id)}
-                        className="btn btn-add"
-                        style={{ width: '100%' }}
-                      >
-                        + Dodaj projekt
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                switch (section.type) {
+                  case 'it-projects':
+                    return (
+                      <ItProjectsSection
+                        key={section.id}
+                        {...baseProps}
+                        onAddTechnology={addTechnology}
+                        onUpdateTechnology={updateTechnology}
+                        onRemoveTechnology={removeTechnology}
+                      />
+                    );
+                  case 'education':
+                    return <EducationSection key={section.id} {...baseProps} />;
+                  case 'skills':
+                    return <SkillsSection key={section.id} {...baseProps} />;
+                  case 'certifications':
+                    return <CertificationsSection key={section.id} {...baseProps} />;
+                  case 'languages':
+                    return <LanguagesSection key={section.id} {...baseProps} />;
+                  case 'aviation':
+                    return <AviationSection key={section.id} {...baseProps} />;
+                  case 'construction':
+                    return <ConstructionSection key={section.id} {...baseProps} />;
+                  case 'custom':
+                    return <CustomGenericSection key={section.id} {...baseProps} />;
+                  default:
+                    return null;
+                }
+              })}
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

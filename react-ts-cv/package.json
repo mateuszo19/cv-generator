@@ -11,10 +11,12 @@
     "deploy": "./deploy.sh"
   },
   "dependencies": {
-    "@types/html2pdf.js": "^0.10.0",
-    "html2pdf.js": "^0.14.0",
+    "@tailwindcss/vite": "^4.2.2",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

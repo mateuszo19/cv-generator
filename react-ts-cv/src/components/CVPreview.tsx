@@ -5,7 +5,7 @@ interface CVPreviewProps {
   data: CVData;
 }
 
-// Tłumaczenia nagłówków
+/** Polish and English label translations for CV section headings. */
 const translations = {
   pl: {
     birthDate: 'Data urodzenia',
@@ -29,77 +29,78 @@ const translations = {
   },
 };
 
+/**
+ * Read-only CV document component rendered as a printable/exportable preview.
+ * Accepts a forwarded ref so the parent can capture the DOM node for PDF generation.
+ */
 export const CVPreview = forwardRef<HTMLDivElement, CVPreviewProps>(({ data }, ref) => {
   const t = translations[data.language];
   const hasContactData = data.address || data.city || data.postalCode || data.phone || data.email;
+  const locale = data.language === 'pl' ? 'pl-PL' : 'en-GB';
 
   return (
-    <div ref={ref} className="cv-preview active">
-      {/* Zawsze pokazuj nagłówek z imieniem i nazwiskiem */}
+    <div ref={ref} className="cv-preview" style={{ fontFamily: data.cvFont }}>
       <div className="cv-header">
         {data.photo && (
-          <div className="cv-photo">
-            <img src={data.photo} alt={`${data.firstName} ${data.lastName}`} />
+          <div className="flex-shrink-0">
+            <img
+              src={data.photo}
+              alt={`${data.firstName} ${data.lastName}`}
+              className="w-[150px] h-[150px] object-cover border-2 border-black"
+            />
           </div>
         )}
-        <div className="cv-info">
+        <div className="flex-1">
           <h1 className="cv-name">
             {data.firstName || 'Imię'} {data.lastName || 'Nazwisko'}
           </h1>
           <div className="cv-contact">
-            {data.birthDate && <p>{t.birthDate}: {new Date(data.birthDate).toLocaleDateString(data.language === 'pl' ? 'pl-PL' : 'en-GB')}</p>}
+            {data.birthDate && (
+              <p className="my-[5px]">
+                {t.birthDate}: {new Date(data.birthDate).toLocaleDateString(locale)}
+              </p>
+            )}
             {hasContactData && (
-              <p>
+              <p className="my-[5px]">
                 {t.address}: {data.address}
                 {data.city && `, ${data.city}`}
                 {data.postalCode && ` ${data.postalCode}`}
               </p>
             )}
-            {data.phone && <p>{t.phone}: {data.phone}</p>}
-            {data.email && <p>{t.email}: {data.email}</p>}
+            {data.phone && <p className="my-[5px]">{t.phone}: {data.phone}</p>}
+            {data.email && <p className="my-[5px]">{t.email}: {data.email}</p>}
           </div>
         </div>
       </div>
 
-      {/* Podsumowanie zawodowe */}
       {data.summary && (
         <div className="cv-section">
           <h3 className="cv-section-title">{t.professionalSummary}</h3>
-          <p style={{ lineHeight: '1.6', color: '#333333' }}>{data.summary}</p>
+          <p className="leading-[1.6] text-[#333333]">{data.summary}</p>
         </div>
       )}
 
-      {/* Doświadczenie zawodowe */}
       {data.experience.length > 0 && (
         <div className="cv-section">
           <h3 className="cv-section-title">{t.workExperience}</h3>
           {data.experience.map((exp, index) => (
-            <div key={index} style={{ marginBottom: '20px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'baseline',
-                  marginBottom: '8px',
-                }}
-              >
-                <h4 style={{ fontSize: '1.2em', color: '#000000' }}>{exp.position}</h4>
-                <span style={{ color: '#666', fontSize: '0.9em' }}>
-                  {exp.startDate && new Date(exp.startDate).toLocaleDateString(data.language === 'pl' ? 'pl-PL' : 'en-GB')} -{' '}
-                  {exp.endDate ? new Date(exp.endDate).toLocaleDateString(data.language === 'pl' ? 'pl-PL' : 'en-GB') : t.present}
+            <div key={index} className="mb-5">
+              <div className="flex justify-between items-baseline mb-2">
+                <h4 className="text-[1.2em] text-black">{exp.position}</h4>
+                <span className="text-[#666] text-[0.9em]">
+                  {exp.startDate && new Date(exp.startDate).toLocaleDateString(locale)} -{' '}
+                  {exp.endDate ? new Date(exp.endDate).toLocaleDateString(locale) : t.present}
                 </span>
               </div>
               <p className="experience-company">{exp.company}</p>
               {exp.jobDescription && (
-                <p style={{ marginBottom: '10px', color: '#333333', lineHeight: '1.5' }}>
-                  {exp.jobDescription}
-                </p>
+                <p className="mb-2.5 text-[#333333] leading-[1.5]">{exp.jobDescription}</p>
               )}
-              <ul style={{ paddingLeft: '20px', margin: 0 }}>
+              <ul className="pl-5 m-0">
                 {exp.description
                   .filter((d) => d.trim())
                   .map((desc, descIndex) => (
-                    <li key={descIndex} style={{ marginBottom: '5px', color: '#333333' }}>
+                    <li key={descIndex} className="mb-[5px] text-[#333333]">
                       {desc}
                     </li>
                   ))}
@@ -109,37 +110,27 @@ export const CVPreview = forwardRef<HTMLDivElement, CVPreviewProps>(({ data }, r
         </div>
       )}
 
-      {/* Dodatkowe sekcje personalizowane */}
       {data.customSections.length > 0 &&
         data.customSections.map((section) => (
           <div key={section.id} className="cv-section">
             <h3 className="cv-section-title">{section.title}</h3>
+
             {section.type === 'it-projects' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div className="flex flex-col gap-[15px]">
                 {section.items.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid #e5e7eb', padding: '15px', borderRadius: '4px' }}>
-                    <h4 style={{ fontSize: '1.1em', color: '#000000', marginBottom: '8px' }}>
-                      {item.data.name as string}
-                    </h4>
+                  <div key={item.id} className="border border-gray-200 p-[15px] rounded">
+                    <h4 className="text-[1.1em] text-black mb-2">{item.data.name as string}</h4>
                     {item.data.description && (
-                      <p style={{ color: '#333333', marginBottom: '8px', lineHeight: '1.5' }}>
-                        {item.data.description as string}
-                      </p>
+                      <p className="text-[#333333] mb-2 leading-[1.5]">{item.data.description as string}</p>
                     )}
                     {item.data.technologies && Array.isArray(item.data.technologies) && (
-                      <div style={{ marginTop: '10px' }}>
-                        <strong style={{ color: '#000000', fontSize: '0.9em' }}>Technologies:</strong>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                      <div className="mt-2.5">
+                        <strong className="text-black text-[0.9em]">Technologies:</strong>
+                        <div className="flex flex-wrap gap-2 mt-2">
                           {(item.data.technologies as string[]).map((tech, techIndex) => (
                             <span
                               key={techIndex}
-                              style={{
-                                background: '#f3f4f6',
-                                padding: '4px 12px',
-                                borderRadius: '12px',
-                                fontSize: '0.85em',
-                                color: '#333333',
-                              }}
+                              className="bg-gray-100 px-3 py-1 rounded-full text-[0.85em] text-[#333333]"
                             >
                               {tech}
                             </span>
@@ -148,8 +139,13 @@ export const CVPreview = forwardRef<HTMLDivElement, CVPreviewProps>(({ data }, r
                       </div>
                     )}
                     {item.data.link && (
-                      <div style={{ marginTop: '8px' }}>
-                        <a href={item.data.link as string} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb' }}>
+                      <div className="mt-2">
+                        <a
+                          href={item.data.link as string}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600"
+                        >
                           {item.data.link as string}
                         </a>
                       </div>
@@ -160,74 +156,76 @@ export const CVPreview = forwardRef<HTMLDivElement, CVPreviewProps>(({ data }, r
             )}
 
             {section.type === 'education' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="flex flex-col gap-3">
                 {section.items.map((item) => (
                   <div key={item.id}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <h4 style={{ fontSize: '1.1em', color: '#000000' }}>{item.data.school as string}</h4>
-                      <span style={{ color: '#666', fontSize: '0.9em' }}>
+                    <div className="flex justify-between mb-1">
+                      <h4 className="text-[1.1em] text-black">{item.data.school as string}</h4>
+                      <span className="text-[#666] text-[0.9em]">
                         {item.data.startDate as string} - {item.data.endDate || t.present}
                       </span>
                     </div>
-                    <p style={{ color: '#333333', fontWeight: '500' }}>{item.data.degree as string}</p>
-                    {item.data.field && <p style={{ color: '#666', fontSize: '0.95em' }}>{item.data.field as string}</p>}
+                    <p className="text-[#333333] font-medium">{item.data.degree as string}</p>
+                    {item.data.field && (
+                      <p className="text-[#666] text-[0.95em]">{item.data.field as string}</p>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
             {section.type === 'languages' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="flex flex-col gap-2.5">
                 {section.items.map((item) => (
-                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <span style={{ color: '#333333', fontWeight: '500' }}>{item.data.language as string}</span>
-                    <span style={{ color: '#666', fontSize: '0.95em' }}>{item.data.level as string}</span>
+                  <div key={item.id} className="flex justify-between items-baseline">
+                    <span className="text-[#333333] font-medium">{item.data.language as string}</span>
+                    <span className="text-[#666] text-[0.95em]">{item.data.level as string}</span>
                   </div>
                 ))}
               </div>
             )}
 
             {section.type === 'certifications' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="flex flex-col gap-2.5">
                 {section.items.map((item) => (
                   <div key={item.id}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <h4 style={{ fontSize: '1.05em', color: '#000000' }}>{item.data.name as string}</h4>
-                      <span style={{ color: '#666', fontSize: '0.9em' }}>{item.data.date as string}</span>
+                    <div className="flex justify-between mb-1">
+                      <h4 className="text-[1.05em] text-black">{item.data.name as string}</h4>
+                      <span className="text-[#666] text-[0.9em]">{item.data.date as string}</span>
                     </div>
-                    <p style={{ color: '#666', fontSize: '0.95em' }}>{item.data.issuer as string}</p>
+                    <p className="text-[#666] text-[0.95em]">{item.data.issuer as string}</p>
                   </div>
                 ))}
               </div>
             )}
 
             {section.type === 'aviation' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="flex flex-col gap-3">
                 {section.items.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid #e5e7eb', padding: '12px', borderRadius: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <h4 style={{ fontSize: '1.05em', color: '#000000' }}>{item.data.license as string}</h4>
-                      <span style={{ color: '#666', fontSize: '0.9em' }}>{item.data.hours as string}</span>
+                  <div key={item.id} className="border border-gray-200 p-3 rounded">
+                    <div className="flex justify-between mb-2">
+                      <h4 className="text-[1.05em] text-black">{item.data.license as string}</h4>
+                      <span className="text-[#666] text-[0.9em]">{item.data.hours as string}</span>
                     </div>
-                    {item.data.type && <p style={{ color: '#666', fontSize: '0.95em' }}>Typ: {item.data.type as string}</p>}
+                    {item.data.type && (
+                      <p className="text-[#666] text-[0.95em]">Typ: {item.data.type as string}</p>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
             {section.type === 'construction' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="flex flex-col gap-3">
                 {section.items.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid #e5e7eb', padding: '12px', borderRadius: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <h4 style={{ fontSize: '1.05em', color: '#000000' }}>{item.data.project as string}</h4>
-                      <span style={{ color: '#666', fontSize: '0.9em' }}>{item.data.duration as string}</span>
+                  <div key={item.id} className="border border-gray-200 p-3 rounded">
+                    <div className="flex justify-between mb-2">
+                      <h4 className="text-[1.05em] text-black">{item.data.project as string}</h4>
+                      <span className="text-[#666] text-[0.9em]">{item.data.duration as string}</span>
                     </div>
-                    <p style={{ color: '#333333', fontWeight: '500', marginBottom: '4px' }}>{item.data.role as string}</p>
+                    <p className="text-[#333333] font-medium mb-1">{item.data.role as string}</p>
                     {item.data.scope && (
-                      <p style={{ color: '#666', fontSize: '0.95em', marginTop: '4px', lineHeight: '1.4' }}>
-                        {item.data.scope as string}
-                      </p>
+                      <p className="text-[#666] text-[0.95em] leading-[1.4]">{item.data.scope as string}</p>
                     )}
                   </div>
                 ))}
@@ -235,26 +233,24 @@ export const CVPreview = forwardRef<HTMLDivElement, CVPreviewProps>(({ data }, r
             )}
 
             {section.type === 'skills' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+              <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
                 {section.items.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid #e5e7eb', padding: '10px', borderRadius: '4px' }}>
-                    <strong style={{ color: '#000000' }}>{item.data.category as string}</strong>
-                    <p style={{ color: '#333333', marginTop: '4px', fontSize: '0.95em' }}>
-                      {item.data.skills as string}
-                    </p>
+                  <div key={item.id} className="border border-gray-200 p-2.5 rounded">
+                    <strong className="text-black">{item.data.category as string}</strong>
+                    <p className="text-[#333333] mt-1 text-[0.95em]">{item.data.skills as string}</p>
                   </div>
                 ))}
               </div>
             )}
 
             {section.type === 'custom' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="flex flex-col gap-3">
                 {section.items.map((item) => (
-                  <div key={item.id} style={{ border: '1px solid #e5e7eb', padding: '12px', borderRadius: '4px' }}>
+                  <div key={item.id} className="border border-gray-200 p-3 rounded">
                     {Object.entries(item.data).map(([key, value]) => (
-                      <div key={key} style={{ marginBottom: value !== item.data[Object.keys(item.data)[Object.keys(item.data).length - 1]] ? '8px' : '0' }}>
-                        <strong style={{ color: '#000000', fontSize: '0.9em' }}>{key}:</strong>
-                        <p style={{ color: '#333333', marginTop: '2px' }}>{value as string}</p>
+                      <div key={key} className="mb-2 last:mb-0">
+                        <strong className="text-black text-[0.9em]">{key}:</strong>
+                        <p className="text-[#333333] mt-0.5">{value as string}</p>
                       </div>
                     ))}
                   </div>
@@ -264,7 +260,6 @@ export const CVPreview = forwardRef<HTMLDivElement, CVPreviewProps>(({ data }, r
           </div>
         ))}
 
-      {/* Informacje dodatkowe */}
       {data.additionalInfo.length > 0 && (
         <div className="cv-section">
           <h3 className="cv-section-title">{t.additionalInfo}</h3>

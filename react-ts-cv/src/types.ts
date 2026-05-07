@@ -8,11 +8,22 @@ export interface CVData {
   postalCode: string;
   phone: string;
   email: string;
-  summary: string; // Nowe pole: opis własny
+  summary: string;
   additionalInfo: AdditionalInfo[];
   experience: Experience[];
-  customSections: CustomSection[]; // Nowe pole: personalizowane sekcje
-  language: 'pl' | 'en'; // Nowe pole: język interfejsu
+  customSections: CustomSection[];
+  language: 'pl' | 'en';
+  cvFont: string;
+}
+
+/** A selectable font option for the CV document. */
+export interface FontOption {
+  /** CSS font-family value passed to the CV preview. */
+  value: string;
+  /** Human-readable name shown in the font picker. */
+  label: string;
+  /** URL fragment used to load the font from Google Fonts. */
+  googleFamily: string;
 }
 
 export interface AdditionalInfo {

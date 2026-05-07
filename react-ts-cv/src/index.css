@@ -1,1 +1,102 @@
-/* Reset dla aplikacji CV */
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    @apply text-gray-900 text-sm leading-relaxed;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center bg-white border border-gray-300 text-gray-900 px-5 py-2.5 rounded text-sm font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-gray-400;
+    font-family: inherit;
+  }
+
+  .btn-primary {
+    @apply bg-gray-900 border-gray-900 text-white hover:bg-gray-800 hover:border-gray-800;
+  }
+
+  .btn-danger {
+    @apply border-red-500 text-red-500 hover:bg-red-500 hover:text-white;
+  }
+
+  .btn-remove {
+    @apply inline-flex items-center justify-center bg-red-100 border border-red-200 text-red-500 px-4 py-1 text-sm rounded cursor-pointer transition-all hover:bg-red-500 hover:border-red-500 hover:text-white;
+    font-family: inherit;
+  }
+
+  .btn-add {
+    @apply inline-flex items-center justify-center bg-white border border-gray-300 text-gray-900 px-4 py-2 rounded text-sm font-medium cursor-pointer transition-all hover:bg-gray-50 hover:border-gray-400;
+    font-family: inherit;
+  }
+
+  .form-input {
+    @apply px-3 py-2.5 border border-gray-300 rounded text-sm bg-white transition-colors focus:outline-none focus:border-gray-400;
+    font-family: inherit;
+  }
+
+  .cv-preview {
+    @apply max-w-[800px] mx-auto p-10 bg-white;
+  }
+
+  .cv-header {
+    @apply flex gap-8 mb-8 pb-5 border-b-2 border-black;
+  }
+
+  .cv-name {
+    @apply text-[2em] text-black mb-2.5 font-bold tracking-tight;
+  }
+
+  .cv-contact {
+    @apply text-[#333333] text-[0.95em];
+    line-height: 1.8;
+  }
+
+  .cv-section {
+    @apply mb-[25px];
+  }
+
+  .cv-section-title {
+    @apply text-[1.1em] text-black mb-[15px] pb-2 uppercase border-b border-black font-semibold;
+    letter-spacing: 1px;
+  }
+
+  .cv-additional-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    @apply gap-[15px];
+  }
+
+  .cv-info-item {
+    @apply border border-gray-200 p-3 bg-white;
+    border-left: 2px solid #000000;
+  }
+
+  .cv-info-label {
+    @apply font-semibold text-black mb-1 text-[0.9em] uppercase;
+  }
+
+  .cv-info-value {
+    @apply text-[#333333] mt-1;
+  }
+
+  .experience-company {
+    @apply text-[#333333] font-medium mb-2.5;
+  }
+}
+
+@page {
+  margin: 0;
+}
+
+@media print {
+  body {
+    background: white;
+    padding: 0;
+  }
+
+  a[href]::after {
+    content: none !important;
+  }
+}
