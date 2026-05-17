@@ -2,7 +2,8 @@ import { useState, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import type { CVData, AdditionalInfo, Experience, CustomSection, CustomSectionItem, SectionType } from './types';
+import type { CVData, AdditionalInfo, Experience, CustomSection, CustomSectionItem, SectionType, SocialLink, CVSectionId } from './types';
+import { DEFAULT_SECTION_ORDER } from './types';
 import { CVPreview } from './components/CVPreview';
 import { FontPicker, DEFAULT_FONT } from './components/FontPicker';
 import {
@@ -33,12 +34,15 @@ function App() {
     postalCode: '',
     phone: '',
     email: '',
+    socialLinks: [],
     summary: '',
     additionalInfo: [],
     experience: [],
     customSections: [],
+    sectionOrder: [...DEFAULT_SECTION_ORDER],
     language: 'pl',
     cvFont: DEFAULT_FONT,
+    gdprConsent: true,
   });
 
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -49,6 +53,7 @@ function App() {
     experience: false,
     customSections: false,
     additional: false,
+    sectionOrder: false,
   });
 
   /**
@@ -448,6 +453,33 @@ function App() {
   };
 
   /**
+   * Appends an empty social link entry to the CV.
+   */
+  const addSocialLink = () => {
+    setCvData({ ...cvData, socialLinks: [...cvData.socialLinks, { name: '', url: '' }] });
+  };
+
+  /**
+   * Updates a specific field of a social link entry.
+   * @param index - Array index of the entry to update.
+   * @param field - Field to update ('name' or 'url').
+   * @param value - New value.
+   */
+  const updateSocialLink = (index: number, field: keyof SocialLink, value: string) => {
+    const updated = [...cvData.socialLinks];
+    updated[index] = { ...updated[index], [field]: value };
+    setCvData({ ...cvData, socialLinks: updated });
+  };
+
+  /**
+   * Removes a social link entry at the given index.
+   * @param index - Array index of the entry to remove.
+   */
+  const removeSocialLink = (index: number) => {
+    setCvData({ ...cvData, socialLinks: cvData.socialLinks.filter((_, i) => i !== index) });
+  };
+
+  /**
    * Appends a new empty work experience entry to the CV.
    */
   const addExperience = () => {
@@ -562,6 +594,21 @@ function App() {
   };
 
   /**
+   * Moves a top-level CV section one position up or down in the render order.
+   * @param sectionId - Identifier of the section to move.
+   * @param direction - Direction to move: 'up' decrements index, 'down' increments it.
+   */
+  const moveCVSection = (sectionId: CVSectionId, direction: 'up' | 'down') => {
+    const order = [...cvData.sectionOrder];
+    const index = order.indexOf(sectionId);
+    if (index === -1) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= order.length) return;
+    [order[index], order[targetIndex]] = [order[targetIndex], order[index]];
+    setCvData({ ...cvData, sectionOrder: order });
+  };
+
+  /**
    * Serialises the current CV data to a JSON file and triggers a download.
    */
   const saveToJSON = () => {
@@ -586,6 +633,9 @@ function App() {
       reader.onload = (event) => {
         try {
           const data = JSON.parse(event.target?.result as string);
+          if (!data.sectionOrder) {
+            data.sectionOrder = [...DEFAULT_SECTION_ORDER];
+          }
           setCvData(data);
           alert('CV zostało wczytane pomyślnie!');
         } catch (error) {
@@ -611,12 +661,15 @@ function App() {
         postalCode: '',
         phone: '',
         email: '',
+        socialLinks: [],
         summary: '',
         additionalInfo: [],
         experience: [],
         customSections: [],
+        sectionOrder: [...DEFAULT_SECTION_ORDER],
         language: 'pl',
         cvFont: DEFAULT_FONT,
+        gdprConsent: true,
       });
     }
   };
@@ -752,6 +805,48 @@ function App() {
         </div>
 
         <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className={headerClass(expandedSections.sectionOrder)} onClick={() => toggleSection('sectionOrder')}>
+            <span className="font-semibold text-gray-900 text-[15px]">Kolejnosc sekcji</span>
+            <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.sectionOrder ? 'rotate-180' : ''}`}>▼</span>
+          </div>
+          {expandedSections.sectionOrder && (
+            <div className="p-5">
+              <p className="text-sm text-gray-500 mb-3">Ustaw kolejnosc w jakiej sekcje pojawia sie w CV.</p>
+              {cvData.sectionOrder.map((sectionId, index) => (
+                <div key={sectionId} data-testid="section-order-row" className="flex items-center gap-2 mb-2 bg-gray-50 border border-gray-200 rounded px-3 py-2">
+                  <span className="flex-1 text-sm text-gray-800 font-medium">
+                    {sectionId === 'summary' && 'Opis zawodowy'}
+                    {sectionId === 'experience' && 'Doswiadczenie zawodowe'}
+                    {sectionId === 'customSections' && 'Sekcje personalizowane'}
+                    {sectionId === 'additionalInfo' && 'Informacje dodatkowe'}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveCVSection(sectionId, 'up')}
+                      disabled={index === 0}
+                      className="px-2 py-0.5 text-xs border border-gray-300 rounded bg-white hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                      title="Przesuń w górę"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveCVSection(sectionId, 'down')}
+                      disabled={index === cvData.sectionOrder.length - 1}
+                      className="px-2 py-0.5 text-xs border border-gray-300 rounded bg-white hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                      title="Przesuń w dół"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
           <div className={headerClass(expandedSections.basic)} onClick={() => toggleSection('basic')}>
             <span className="font-semibold text-gray-900 text-[15px]">Dane podstawowe</span>
             <span className={`transition-transform text-gray-500 text-xs inline-block ${expandedSections.basic ? 'rotate-180' : ''}`}>▼</span>
@@ -853,6 +948,37 @@ function App() {
                   value={cvData.email}
                   onChange={(e) => setCvData({ ...cvData, email: e.target.value })}
                 />
+              </div>
+              <div className="mb-[15px]">
+                <label className="block mb-1.5 text-gray-900 font-medium text-sm">Social media:</label>
+                {cvData.socialLinks.map((link, index) => (
+                  <div key={index} className="flex gap-2.5 mb-2.5 items-center">
+                    <input
+                      type="text"
+                      className="form-input w-[140px]"
+                      value={link.name}
+                      onChange={(e) => updateSocialLink(index, 'name', e.target.value)}
+                      placeholder="np. GitHub"
+                    />
+                    <input
+                      type="url"
+                      className="form-input flex-1"
+                      value={link.url}
+                      onChange={(e) => updateSocialLink(index, 'url', e.target.value)}
+                      placeholder="https://..."
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeSocialLink(index)}
+                      className="btn-remove"
+                    >
+                      Usuń
+                    </button>
+                  </div>
+                ))}
+                <button type="button" onClick={addSocialLink} className="btn-add">
+                  + Dodaj profil
+                </button>
               </div>
             </div>
           )}
@@ -1127,6 +1253,30 @@ function App() {
               })}
             </div>
           )}
+        </div>
+
+        <div className="border border-gray-300 rounded-md mb-3 overflow-hidden bg-white">
+          <div className="flex justify-between items-center px-5 py-4 bg-gray-50 border-b border-transparent">
+            <span className="font-semibold text-gray-900 text-[15px]">Zgoda RODO</span>
+          </div>
+          <div className="p-5">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-0.5 w-4 h-4 accent-gray-900 cursor-pointer flex-shrink-0"
+                checked={cvData.gdprConsent}
+                onChange={(e) => setCvData({ ...cvData, gdprConsent: e.target.checked })}
+              />
+              <span className="text-sm text-gray-700 leading-relaxed">
+                Dodaj klauzulę zgody na przetwarzanie danych osobowych (RODO) na końcu CV
+              </span>
+            </label>
+            {cvData.gdprConsent && (
+              <p className="mt-3 text-xs text-gray-500 leading-relaxed bg-gray-50 p-3 rounded border border-gray-200">
+                Wyrażam zgodę na przetwarzanie moich danych osobowych zawartych w CV na potrzeby procesu rekrutacji zgodnie z Rozporządzeniem Parlamentu Europejskiego i Rady (UE) 2016/679 (RODO).
+              </p>
+            )}
+          </div>
         </div>
 
       </div>

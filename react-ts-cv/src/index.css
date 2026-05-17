@@ -60,6 +60,7 @@
   .cv-section-title {
     @apply text-[1.1em] text-black mb-[15px] pb-2 uppercase border-b border-black font-semibold;
     letter-spacing: 1px;
+    break-after: avoid;
   }
 
   .cv-additional-info {

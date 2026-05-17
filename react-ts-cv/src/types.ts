@@ -1,3 +1,14 @@
+/** Identifies a reorderable top-level section in the CV document. */
+export type CVSectionId = 'summary' | 'experience' | 'customSections' | 'additionalInfo';
+
+/** Default rendering order for top-level CV sections. */
+export const DEFAULT_SECTION_ORDER: CVSectionId[] = [
+  'summary',
+  'experience',
+  'customSections',
+  'additionalInfo',
+];
+
 export interface CVData {
   firstName: string;
   lastName: string;
@@ -8,12 +19,23 @@ export interface CVData {
   postalCode: string;
   phone: string;
   email: string;
+  socialLinks: SocialLink[];
   summary: string;
   additionalInfo: AdditionalInfo[];
   experience: Experience[];
   customSections: CustomSection[];
+  sectionOrder: CVSectionId[];
   language: 'pl' | 'en';
   cvFont: string;
+  gdprConsent: boolean;
+}
+
+/** A named social media or web profile link. */
+export interface SocialLink {
+  /** Display name of the platform, e.g. "GitHub", "LinkedIn". */
+  name: string;
+  /** Full URL to the profile. */
+  url: string;
 }
 
 /** A selectable font option for the CV document. */
